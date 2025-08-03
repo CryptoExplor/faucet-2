@@ -20,18 +20,19 @@
 
   <!-- Farcaster Frame Metadata -->
   <!-- This is the most important part. It defines the frame and its behavior. -->
-  <meta property="og:image" content="/public/frame-image.svg" />
+  <!-- Corrected meta tags based on your feedback -->
+  <meta property="og:image" content="https://faucet-2.vercel.app/frame-image.svg" />
   <meta property="fc:frame" content="vNext" />
-  <meta property="fc:frame:image" content="/public/frame-image.svg" />
-  <meta property="fc:frame:button:1" content="Open Faucet App" />
-  <meta property="fc:frame:button:1:action" content="post_redirect" />
-  <meta property="fc:frame:post_url" content="/index.html" />
+  <meta property="fc:frame:image" content="https://faucet-2.vercel.app/frame-image.svg" />
+  <meta property="fc:frame:button:1" content="Claim Test ETH" />
+  <meta property="fc:frame:button:1:action" content="post" />
+  <meta property="fc:frame:post_url" content="https://faucet-2.vercel.app/api/claim-frame" />
 </head>
 <body class="bg-[#111] text-white flex flex-col items-center justify-center min-h-screen p-4">
 
   <!-- A simple visual representation of the frame content -->
   <div class="bg-[#222] p-8 rounded-xl text-center w-full max-w-sm">
-    <img src="/public/frame-image.svg" alt="SuperChain Faucet Logo" class="w-24 h-24 mx-auto mb-4" />
+    <img src="https://faucet-2.vercel.app/frame-image.svg" alt="SuperChain Faucet Logo" class="w-24 h-24 mx-auto mb-4" />
     <h1 class="text-xl font-bold">SuperChain Faucet</h1>
     <p class="mt-2 text-gray-400">Claim test ETH for various Superchain networks.</p>
     <p class="mt-4 text-sm text-gray-500">Click the button below to launch the full app.</p>
