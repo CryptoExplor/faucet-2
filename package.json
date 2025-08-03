@@ -1,0 +1,19 @@
+{
+  "name": "superchain-faucet",
+  "version": "1.0.0",
+  "description": "A Farcaster Mini App for a SuperChain testnet faucet.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "ethers": "^5.7.2",
+    "upstash-redis": "^1.31.7",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  },
+  "author": "CryptoExplor",
+  "license": "ISC"
+}
