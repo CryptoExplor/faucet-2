@@ -52,7 +52,7 @@ module.exports = async (req, res) => {
     res.status(200).json({
       address: address,
       score: score,
-      passing_score: score >= PASSPORT_THRESHOLD,
+      passing: score >= PASSPORT_THRESHOLD,
     });
 
   } catch (error) {
