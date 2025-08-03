@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=390, initial-scale=1.0" />
+  <title>SuperChain Faucet Frame</title>
+
+  <!-- Tailwind CSS for modern, responsive styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /*
+      The following custom CSS is integrated to ensure consistency
+      with the main faucet app's dark theme and fonts.
+    */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+
+  <!-- Farcaster Frame Metadata -->
+  <!-- This is the most important part. It defines the frame and its behavior. -->
+  <meta property="og:image" content="/public/frame-image.svg" />
+  <meta property="fc:frame" content="vNext" />
+  <meta property="fc:frame:image" content="/public/frame-image.svg" />
+  <meta property="fc:frame:button:1" content="Open Faucet App" />
+  <meta property="fc:frame:button:1:action" content="post_redirect" />
+  <meta property="fc:frame:post_url" content="/index.html" />
+</head>
+<body class="bg-[#111] text-white flex flex-col items-center justify-center min-h-screen p-4">
+
+  <!-- A simple visual representation of the frame content -->
+  <div class="bg-[#222] p-8 rounded-xl text-center w-full max-w-sm">
+    <img src="/public/frame-image.svg" alt="SuperChain Faucet Logo" class="w-24 h-24 mx-auto mb-4" />
+    <h1 class="text-xl font-bold">SuperChain Faucet</h1>
+    <p class="mt-2 text-gray-400">Claim test ETH for various Superchain networks.</p>
+    <p class="mt-4 text-sm text-gray-500">Click the button below to launch the full app.</p>
+  </div>
+
+</body>
+</html>
