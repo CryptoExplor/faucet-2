@@ -138,9 +138,7 @@
     const crossIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-circle text-red-500"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`;
     const clockIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
     const spinner = `<div class="spinner"></div>`;
-
-    // Initialize Farcaster SDK
-    sdk.actions.ready({ disableNativeGestures: true });
+    const warningIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle text-yellow-500"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`;
 
     // --- State Variables ---
     let account = null;
@@ -152,6 +150,7 @@
     let selectedNetwork = null;
     let wagmiConfig = null;
     let lastClaimData = null;
+    let isFarcasterEnv = false;
 
     // --- Configuration for Deployment ---
     // !!! IMPORTANT: Replace these with your actual values before deploying !!!
@@ -281,6 +280,16 @@
 
     // --- UI Update Function ---
     const updateUI = () => {
+      if (!isFarcasterEnv) {
+        walletStatus.innerHTML = `Not in Farcaster ${warningIcon}`;
+        passportStatus.innerHTML = `Not in Farcaster ${warningIcon}`;
+        rateLimitStatus.innerHTML = `Not in Farcaster ${warningIcon}`;
+        claimButton.innerText = 'Launch in Farcaster';
+        claimButton.disabled = true;
+        claimButton.className = 'px-8 py-4 text-xl font-bold rounded-lg mb-3 bg-gray-600 text-gray-400 cursor-not-allowed';
+        return;
+      }
+
       walletStatus.innerHTML = isConnected ? `<span class="font-mono text-xs">${account.slice(0, 6)}...${account.slice(-4)}</span> ${checkIcon}` : crossIcon;
 
       if (isRequirementsLoading) {
@@ -477,6 +486,14 @@
 
     // The main function to initialize the app
     const init = async () => {
+        isFarcasterEnv = typeof sdk.actions.ready === 'function';
+        
+        if (!isFarcasterEnv) {
+            setStatus('This app must be opened inside a Farcaster Mini App client to function.', 'error');
+            updateUI();
+            return;
+        }
+
         // Populate the network selector dropdown
         const activeNetworks = getActiveNetworks();
         activeNetworks.forEach(network => {
