@@ -53,8 +53,8 @@
   <meta name="description" content="Unofficial faucet for SuperChain testnets. Claim test ETH with Gitcoin Passport verification.">
   <meta property="og:title" content="SuperChain Faucet (Unofficial)">
   <meta property="og:description" content="Unofficial faucet for SuperChain development. Get test ETH with Gitcoin Passport score ≥ 10.">
-  <meta property="og:image" content="/public/frame-image.svg">
-  <meta property="og:url" content="/index.html">
+  <meta property="og:image" content="https://faucet-2.vercel.app/frame-image.jpg">
+  <meta property="og:url" content="https://faucet-2.vercel.app/">
   <meta name="twitter:card" content="summary_large_image">
 </head>
 <body class="bg-[#111] text-white flex flex-col items-center min-h-screen p-4">
@@ -117,463 +117,460 @@
   </div>
 
   <!-- Claim Button -->
-  <button id="claimButton" class="px-8 py-4 text-xl font-bold rounded-lg mb-3 bg-white text-black transition-transform transform hover:scale-scale-105">
-    CONNECT WALLET
+  <button id="claimButton" class="px-8 py-4 text-xl font-bold rounded-lg mb-3 bg-white text-black transition-transform transform hover:scale-105">
+    CLAIM ETH
   </button>
-  
-  <!-- Injected wallet button, visible when not in Farcaster env -->
-  <button id="connectInjectedButton" class="hidden px-8 py-4 text-xl font-bold rounded-lg mb-3 bg-white text-black transition-transform transform hover:scale-105">
-    CONNECT INJECTED WALLET
-  </button>
-
 
   <!-- Status Message Box -->
   <div id="statusBox" class="px-3 py-2 rounded-lg text-sm w-full max-w-sm text-center"></div>
   
-  <script type="module">
-    import {
-      createConfig,
-      connect,
-      http
-    } from 'https://esm.sh/@wagmi/core@2.11.7';
-    import { farcasterMiniApp } from 'https://esm.sh/@farcaster/miniapp-wagmi-connector';
-    import { injected } from 'https://esm.sh/@wagmi/connectors/injected';
-    import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
-    
-    // Import Lucide icons as SVG strings for direct insertion
-    const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle-2 text-green-500"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/><path d="m9 12 2 2 4-4"/></svg>`;
-    const crossIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-circle text-red-500"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`;
-    const clockIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-    const spinner = `<div class="spinner"></div>`;
-    const warningIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle text-yellow-500"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`;
-    const injectedIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h12a2 2 0 0 1 0 4H5a2 2 0 0 1 0 4h12a2 2 0 0 1 0 4H5a1 1 0 0 0 1 1h12V7"/><path d="M12 12h.01"/></svg>`;
+ <script type="module">
+  import {
+    createConfig,
+    connect,
+    http
+  } from 'https://esm.sh/@wagmi/core@2.11.7';
+  import { farcasterMiniApp } from 'https://esm.sh/@farcaster/miniapp-wagmi-connector';
+  import { injected } from 'https://esm.sh/@wagmi/connectors/injected';
+  import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk'; // Make sure this import is here
 
-    // --- State Variables ---
-    let account = null;
-    let isConnected = false;
-    let passportData = null;
-    let rateLimitData = null;
-    let isClaiming = false;
-    let isRequirementsLoading = false;
-    let selectedNetwork = null;
-    let wagmiConfig = null;
-    let lastClaimData = null;
-    let isFarcasterEnv = false;
+  // Import Lucide icons as SVG strings for direct insertion
+  const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle-2 text-green-500"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/><path d="m9 12 2 2 4-4"/></svg>`;
+  const crossIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-circle text-red-500"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`;
+  const clockIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+  const spinner = `<div class="spinner"></div>`;
+  const warningIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle text-yellow-500"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`;
+  const injectedIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h12a2 2 0 0 1 0 4H5a2 2 0 0 1 0 4h12a2 2 0 0 1 0 4H5a1 1 0 0 0 1 1h12V7"/><path d="M12 12h.01"/></svg>`;
 
-    // --- Configuration for Deployment ---
-    // !!! IMPORTANT: Replace these with your actual values before deploying !!!
-    const PASSPORT_THRESHOLD = 10;
-    const RATE_LIMIT_HOURS = 24;
-    const UPSTASH_REST_URL = 'https://[YOUR_REDIS_URL].upstash.io';
-    const UPSTASH_REST_TOKEN = '[YOUR_REDIS_TOKEN]';
-    // These would be your serverless function endpoints
-    const PASSPORT_API_URL = '/api/passport-score'; 
-    const CLAIM_API_URL = '/api/claim-eth';
+  // --- State Variables ---
+  let account = null;
+  let isConnected = false;
+  let passportData = null;
+  let rateLimitData = null;
+  let isClaiming = false;
+  let isRequirementsLoading = false;
+  let selectedNetwork = null;
+  let wagmiConfig = null;
+  let lastClaimData = null;
+  let isFarcasterEnv = false;
 
-    // --- Network Data (Updated with id) ---
-    const SUPPORTED_NETWORKS = [
-      { id: "base-sepolia", name: "Base Sepolia", chainId: 84532, rpcUrl: "https://sepolia.base.org", nativeCurrency: "ETH", explorerUrl: "https://sepolia.basescan.org", faucetAmount: "0.001", isActive: true },
-      { id: "optimism-sepolia", name: "Optimism Sepolia", chainId: 11155420, rpcUrl: "https://sepolia.optimism.io", nativeCurrency: "ETH", explorerUrl: "https://sepolia-optimism.etherscan.io", faucetAmount: "0.001", isActive: true },
-      { id: "arbitrum-sepolia", name: "Arbitrum Sepolia", chainId: 421614, rpcUrl: "https://sepolia-rollup.arbitrum.io/rpc", nativeCurrency: "ETH", explorerUrl: "https://sepolia.arbiscan.io", faucetAmount: "0.001", isActive: true },
-      { id: "ink-sepolia", name: "Ink Sepolia", chainId: 763373, rpcUrl: "https://rpc-gel-sepolia.inkonchain.com", nativeCurrency: "ETH", explorerUrl: "https://explorer-sepolia.inkonchain.com", faucetAmount: "0.001", isActive: true },
-      { id: "mode-sepolia", name: "Mode Sepolia", chainId: 919, rpcUrl: "https://sepolia.mode.network", nativeCurrency: "ETH", explorerUrl: "https://sepolia.explorer.mode.network", faucetAmount: "0.001", isActive: true },
-      { id: "zora-sepolia", name: "Zora Sepolia", chainId: 999999999, rpcUrl: "https://sepolia.rpc.zora.energy", nativeCurrency: "ETH", explorerUrl: "https://sepolia.explorer.zora.energy", faucetAmount: "0.001", isActive: true },
-      { id: "unichain-sepolia", name: "Unichain Sepolia", chainId: 1301, rpcUrl: "https://sepolia.unichain.org", nativeCurrency: "ETH", explorerUrl: "https://sepolia.uniscan.xyz", faucetAmount: "0.001", isActive: true },
-      { id: "blast-sepolia", name: "Blast Sepolia", chainId: 168587773, rpcUrl: "https://sepolia.blast.io", nativeCurrency: "ETH", explorerUrl: "https://testnet.blastscan.io", faucetAmount: "0.001", isActive: true },
-      { id: "frax-sepolia", name: "Frax Sepolia", chainId: 2522, rpcUrl: "https://rpc.testnet.frax.com", nativeCurrency: "frxETH", explorerUrl: "https://holesky.fraxscan.com", faucetAmount: "0.001", isActive: true },
-      { id: "cyber-sepolia", name: "Cyber Sepolia", chainId: 111557560, rpcUrl: "https://cyber-testnet.alt.technology", nativeCurrency: "ETH", explorerUrl: "https://testnet.cyberscan.co", faucetAmount: "0.001", isActive: true },
-    ];
-    
-    // Get all active networks
-    const getActiveNetworks = () => SUPPORTED_NETWORKS.filter(n => n.isActive);
-    // Get network by chain ID
-    const getNetworkByChainId = (chainId) => SUPPORTED_NETWORKS.find(n => n.chainId === chainId) || null;
-    // Get network by ID
-    const getNetworkById = (id) => SUPPORTED_NETWORKS.find(n => n.id === id) || null;
+  // --- Configuration for Deployment ---
+  // !!! IMPORTANT: Replace these with your actual values before deploying !!!
+  const PASSPORT_THRESHOLD = 10;
+  const RATE_LIMIT_HOURS = 24;
+  const UPSTASH_REST_URL = 'https://[YOUR_REDIS_URL].upstash.io';
+  const UPSTASH_REST_TOKEN = '[YOUR_REDIS_TOKEN]';
+  // These would be your serverless function endpoints
+  const PASSPORT_API_URL = '/api/passport-score'; 
+  const CLAIM_API_URL = '/api/claim-eth';
 
-    // --- DOM Elements ---
-    const networkSelector = document.getElementById('networkSelector');
-    const walletStatus = document.getElementById('walletStatus');
-    const passportStatus = document.getElementById('passportStatus');
-    const rateLimitStatus = document.getElementById('rateLimitStatus');
-    const claimButton = document.getElementById('claimButton');
-    const connectInjectedButton = document.getElementById('connectInjectedButton');
-    const statusBox = document.getElementById('statusBox');
-    const lastClaimDetails = document.getElementById('lastClaimDetails');
+  // --- Network Data (Updated with id) ---
+  const SUPPORTED_NETWORKS = [
+    { id: "base-sepolia", name: "Base Sepolia", chainId: 84532, rpcUrl: "https://sepolia.base.org", nativeCurrency: "ETH", explorerUrl: "https://sepolia.basescan.org", faucetAmount: "0.001", isActive: true },
+    { id: "optimism-sepolia", name: "Optimism Sepolia", chainId: 11155420, rpcUrl: "https://sepolia.optimism.io", nativeCurrency: "ETH", explorerUrl: "https://sepolia-optimism.etherscan.io", faucetAmount: "0.001", isActive: true },
+    { id: "arbitrum-sepolia", name: "Arbitrum Sepolia", chainId: 421614, rpcUrl: "https://sepolia-rollup.arbitrum.io/rpc", nativeCurrency: "ETH", explorerUrl: "https://sepolia.arbiscan.io", faucetAmount: "0.001", isActive: true },
+    { id: "ink-sepolia", name: "Ink Sepolia", chainId: 763373, rpcUrl: "https://rpc-gel-sepolia.inkonchain.com", nativeCurrency: "ETH", explorerUrl: "https://explorer-sepolia.inkonchain.com", faucetAmount: "0.001", isActive: true },
+    { id: "mode-sepolia", name: "Mode Sepolia", chainId: 919, rpcUrl: "https://sepolia.mode.network", nativeCurrency: "ETH", explorerUrl: "https://sepolia.explorer.mode.network", faucetAmount: "0.001", isActive: true },
+    { id: "zora-sepolia", name: "Zora Sepolia", chainId: 999999999, rpcUrl: "https://sepolia.rpc.zora.energy", nativeCurrency: "ETH", explorerUrl: "https://sepolia.explorer.zora.energy", faucetAmount: "0.001", isActive: true },
+    { id: "unichain-sepolia", name: "Unichain Sepolia", chainId: 1301, rpcUrl: "https://sepolia.unichain.org", nativeCurrency: "ETH", explorerUrl: "https://sepolia.uniscan.xyz", faucetAmount: "0.001", isActive: true },
+    { id: "blast-sepolia", name: "Blast Sepolia", chainId: 168587773, rpcUrl: "https://sepolia.blast.io", nativeCurrency: "ETH", explorerUrl: "https://testnet.blastscan.io", faucetAmount: "0.001", isActive: true },
+    { id: "frax-sepolia", name: "Frax Sepolia", chainId: 2522, rpcUrl: "https://rpc.testnet.frax.com", nativeCurrency: "frxETH", explorerUrl: "https://holesky.fraxscan.com", faucetAmount: "0.001", isActive: true },
+    { id: "cyber-sepolia", name: "Cyber Sepolia", chainId: 111557560, rpcUrl: "https://cyber-testnet.alt.technology", nativeCurrency: "ETH", explorerUrl: "https://testnet.cyberscan.co", faucetAmount: "0.001", isActive: true },
+  ];
+  
+  // Get all active networks
+  const getActiveNetworks = () => SUPPORTED_NETWORKS.filter(n => n.isActive);
+  // Get network by chain ID
+  const getNetworkByChainId = (chainId) => SUPPORTED_NETWORKS.find(n => n.chainId === chainId) || null;
+  // Get network by ID
+  const getNetworkById = (id) => SUPPORTED_NETWORKS.find(n => n.id === id) || null;
 
-    // --- Utility Functions ---
+  // --- DOM Elements ---
+  const networkSelector = document.getElementById('networkSelector');
+  const walletStatus = document.getElementById('walletStatus');
+  const passportStatus = document.getElementById('passportStatus');
+  const rateLimitStatus = document.getElementById('rateLimitStatus');
+  const claimButton = document.getElementById('claimButton');
+  const connectInjectedButton = document.getElementById('connectInjectedButton');
+  const statusBox = document.getElementById('statusBox');
+  const lastClaimDetails = document.getElementById('lastClaimDetails');
 
-    // Function to set the status message in the UI
-    const setStatus = (msg, type = '') => {
-      statusBox.innerHTML = msg;
-      statusBox.className = `px-3 py-2 rounded-lg text-sm w-full max-w-sm text-center ${
-        type === 'success' ? 'bg-blue-700' :
-        type === 'error' ? 'bg-red-700' : 'bg-yellow-700'
-      }`;
-    };
-    
-    // Function to format the remaining time for the UI
-    const formatTimeRemaining = (ms) => {
-      if (ms <= 0) return '0 minutes';
-      const seconds = Math.floor(ms / 1000);
-      const minutes = Math.floor(seconds / 60);
-      const hours = Math.floor(minutes / 60);
-      const days = Math.floor(hours / 24);
+  // --- Utility Functions ---
 
-      let result = [];
-      if (days > 0) result.push(`${days} days`);
-      if (hours > 0) result.push(`${hours % 24} hours`);
-      if (minutes > 0) result.push(`${minutes % 60} minutes`);
-      if (result.length === 0) result.push('less than a minute');
+  // Function to set the status message in the UI
+  const setStatus = (msg, type = '') => {
+    statusBox.innerHTML = msg;
+    statusBox.className = `px-3 py-2 rounded-lg text-sm w-full max-w-sm text-center ${
+      type === 'success' ? 'bg-blue-700' :
+      type === 'error' ? 'bg-red-700' : 'bg-yellow-700'
+    }`;
+  };
+  
+  // Function to format the remaining time for the UI
+  const formatTimeRemaining = (ms) => {
+    if (ms <= 0) return '0 minutes';
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
 
-      return result.join(', ');
-    };
+    let result = [];
+    if (days > 0) result.push(`${days} days`);
+    if (hours > 0) result.push(`${hours % 24} hours`);
+    if (minutes > 0) result.push(`${minutes % 60} minutes`);
+    if (result.length === 0) result.push('less than a minute');
 
-    // --- Upstash/Server-side API Interaction Functions ---
+    return result.join(', ');
+  };
 
-    // Function to simulate a fetch call to a serverless function for passport data
-    const fetchPassportData = async (address) => {
-      // In a real app, this would be a fetch call to your serverless function
-      // that interacts with the Gitcoin Passport API.
-      // Example: `const response = await fetch(`${PASSPORT_API_URL}?address=${address}`);`
-      // For this example, we'll simulate the response.
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          const score = Math.random() * 20; // Simulating a score
-          const data = {
-            score: score,
-            address: address,
-            passing_score: score >= PASSPORT_THRESHOLD,
-          };
-          resolve(data);
-        }, 1000);
+  // --- Upstash/Server-side API Interaction Functions ---
+
+  // Function to simulate a fetch call to a serverless function for passport data
+  const fetchPassportData = async (address) => {
+    // In a real app, this would be a fetch call to your serverless function
+    // that interacts with the Gitcoin Passport API.
+    // Example: `const response = await fetch(`${PASSPORT_API_URL}?address=${address}`);`
+    // For this example, we'll simulate the response.
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const score = Math.random() * 20; // Simulating a score
+        const data = {
+          score: score,
+          address: address,
+          passing_score: score >= PASSPORT_THRESHOLD,
+        };
+        resolve(data);
+      }, 1000);
+    });
+  };
+  
+  // Function to load last claim data from Upstash
+  const loadLastClaimData = async () => {
+      // This function would fetch the claim data from your Upstash instance.
+      // The key would be something like 'faucet:claim:{account}:{networkId}'
+      return new Promise((resolve) => {
+          const storedClaims = JSON.parse(localStorage.getItem('faucetClaims') || '{}');
+          resolve(storedClaims[account]?.[selectedNetwork.id] || null);
       });
-    };
-    
-    // Function to load last claim data from Upstash
-    const loadLastClaimData = async () => {
-        // This function would fetch the claim data from your Upstash instance.
-        // The key would be something like 'faucet:claim:{account}:{networkId}'
-        return new Promise((resolve) => {
-            const storedClaims = JSON.parse(localStorage.getItem('faucetClaims') || '{}');
-            resolve(storedClaims[account]?.[selectedNetwork.id] || null);
-        });
-    };
-    
-    // Function to save last claim data to Upstash
-    const saveLastClaimData = async (claim) => {
-        // This function would save the claim data to your Upstash instance.
-        // It should use the `SET` command with an expiration time.
-        return new Promise((resolve) => {
-            const storedClaims = JSON.parse(localStorage.getItem('faucetClaims') || '{}');
-            if (!storedClaims[account]) {
-                storedClaims[account] = {};
-            }
-            storedClaims[account][selectedNetwork.id] = claim;
-            localStorage.setItem('faucetClaims', JSON.stringify(storedClaims));
-            resolve();
-        });
-    };
-
-
-    // --- UI Update Function ---
-    const updateUI = () => {
-      // Hide all wallet connect buttons by default
-      claimButton.style.display = 'none';
-      connectInjectedButton.style.display = 'none';
-
-      // Update wallet connection status display
-      walletStatus.innerHTML = isConnected ? 
-        `<span class="font-mono text-xs">${account.slice(0, 6)}...${account.slice(-4)}</span> ${checkIcon}` : 
-        crossIcon;
-      
-      // Handle the case where the wallet is not connected
-      if (!isConnected) {
-        if (isFarcasterEnv) {
-          claimButton.style.display = 'block';
-          claimButton.innerText = 'CONNECT WALLET';
-          claimButton.className = 'px-8 py-4 text-xl font-bold rounded-lg mb-3 bg-white text-black transition-transform transform hover:scale-105';
-          claimButton.disabled = false;
-        } else {
-          connectInjectedButton.style.display = 'block';
-          connectInjectedButton.innerText = 'CONNECT INJECTED WALLET';
-          connectInjectedButton.className = 'px-8 py-4 text-xl font-bold rounded-lg mb-3 bg-white text-black transition-transform transform hover:scale-105';
-          connectInjectedButton.disabled = false;
-        }
-        return;
-      }
-
-      // If connected, proceed with requirements status and claim button
-      if (isRequirementsLoading) {
-        passportStatus.innerHTML = spinner;
-        rateLimitStatus.innerHTML = spinner;
-      } else {
-        // Passport Status
-        if (passportData) {
-          if (passportData.passing_score) {
-            passportStatus.innerHTML = `<span class="text-green-500 font-semibold">${passportData.score.toFixed(2)} (Passed)</span>`;
-          } else {
-            passportStatus.innerHTML = `<span class="text-red-500 font-semibold">${passportData.score.toFixed(2)} (Failed)</span>`;
+  };
+  
+  // Function to save last claim data to Upstash
+  const saveLastClaimData = async (claim) => {
+      // This function would save the claim data to your Upstash instance.
+      // It should use the `SET` command with an expiration time.
+      return new Promise((resolve) => {
+          const storedClaims = JSON.parse(localStorage.getItem('faucetClaims') || '{}');
+          if (!storedClaims[account]) {
+              storedClaims[account] = {};
           }
-        } else {
-           passportStatus.innerHTML = `<span class="text-red-500 font-semibold">N/A (Failed)</span>`;
-        }
+          storedClaims[account][selectedNetwork.id] = claim;
+          localStorage.setItem('faucetClaims', JSON.stringify(storedClaims));
+          resolve();
+      });
+  };
 
-        // Rate Limit Status
-        if (rateLimitData?.isRateLimited) {
-          rateLimitStatus.innerHTML = `<span class="flex items-center gap-1 text-red-500 font-semibold">${clockIcon} ${formatTimeRemaining(rateLimitData.remainingTime)}</span>`;
-        } else {
-          rateLimitStatus.innerHTML = `<span class="text-green-500 font-semibold">Available</span>`;
-        }
-      }
-      
-      const isButtonDisabled = 
-        isClaiming || 
-        isRequirementsLoading ||
-        (passportData && !passportData.passing_score) ||
-        (rateLimitData && rateLimitData.isRateLimited);
 
-      claimButton.style.display = 'block';
-      claimButton.disabled = isButtonDisabled;
-      if (isButtonDisabled) {
-        claimButton.className = 'px-8 py-4 text-xl font-bold rounded-lg mb-3 bg-gray-600 text-gray-400 cursor-not-allowed';
-      } else {
+  // --- UI Update Function ---
+  const updateUI = () => {
+    // Hide all wallet connect buttons by default
+    claimButton.style.display = 'none';
+    connectInjectedButton.style.display = 'none';
+
+    // Update wallet connection status display
+    walletStatus.innerHTML = isConnected ? 
+      `<span class="font-mono text-xs">${account.slice(0, 6)}...${account.slice(-4)}</span> ${checkIcon}` : 
+      crossIcon;
+    
+    // Handle the case where the wallet is not connected
+    if (!isConnected) {
+      if (isFarcasterEnv) {
+        claimButton.style.display = 'block';
+        claimButton.innerText = 'CONNECT WALLET';
         claimButton.className = 'px-8 py-4 text-xl font-bold rounded-lg mb-3 bg-white text-black transition-transform transform hover:scale-105';
-      }
-      
-      // Update button text based on state
-      if (isClaiming) {
-        claimButton.innerText = 'Claiming…';
-      } else if (isRequirementsLoading) {
-        claimButton.innerText = 'Checking Requirements…';
-      } else if (passportData && !passportData.passing_score) {
-        claimButton.innerText = `Need score ≥ ${PASSPORT_THRESHOLD}`;
-      } else if (rateLimitData && rateLimitData.isRateLimited) {
-        claimButton.innerText = `Try again in ${formatTimeRemaining(rateLimitData.remainingTime)}`;
+        claimButton.disabled = false;
       } else {
-        claimButton.innerText = `CLAIM ETH`;
+        connectInjectedButton.style.display = 'block';
+        connectInjectedButton.innerText = 'CONNECT INJECTED WALLET';
+        connectInjectedButton.className = 'px-8 py-4 text-xl font-bold rounded-lg mb-3 bg-white text-black transition-transform transform hover:scale-105';
+        connectInjectedButton.disabled = false;
       }
-      
-      // Last Claim Display
-      if (lastClaimData) {
-          const claimedAt = new Date(lastClaimData.claimedAt);
-          lastClaimDetails.innerHTML = `
-            <p>Amount: ${lastClaimData.amount} ${getNetworkById(lastClaimData.networkId)?.nativeCurrency}</p>
-            <p>Timestamp: ${claimedAt.toLocaleString()}</p>
-            <p>Tx Hash: <a href="${getNetworkById(lastClaimData.networkId)?.explorerUrl}/tx/${lastClaimData.txHash}" target="_blank" class="underline">${lastClaimData.txHash.slice(0, 10)}...${lastClaimData.txHash.slice(-8)}</a></p>
-          `;
-      } else {
-          lastClaimDetails.textContent = "No previous claims found.";
-      }
-    };
+      return;
+    }
 
-    // --- Main App Logic ---
-    const updateWagmiConfig = (network) => {
-        // Find the chain object in wagmi's supported chains
-        const chain = { 
-          id: network.chainId,
-          name: network.name,
-          nativeCurrency: { name: network.nativeCurrency, symbol: network.nativeCurrency, decimals: 18 },
-          rpcUrls: { default: { http: [network.rpcUrl] } },
-          blockExplorers: { default: { name: 'Explorer', url: network.explorerUrl } },
-          testnet: true
-        };
-
-        // Create the wagmi config with both connectors
-        wagmiConfig = createConfig({
-            chains: [chain],
-            transports: { [network.chainId]: http() },
-            // Add both Farcaster and injected connectors
-            connectors: [farcasterMiniApp(), injected()]
-        });
-        console.log("Wagmi config updated for:", network.name);
-    };
-
-    // Fetches passport and rate limit data
-    const fetchRequirements = async () => {
-        if (!isConnected) return;
-        
-        isRequirementsLoading = true;
-        setStatus('Checking requirements...', 'info');
-        updateUI();
-
-        try {
-            // Fetch passport data from your serverless function
-            passportData = await fetchPassportData(account);
-            
-            // Check rate limit from your Upstash instance
-            const lastClaim = await loadLastClaimData();
-            const now = new Date();
-            
-            if (lastClaim) {
-                const claimedAt = new Date(lastClaim.claimedAt).getTime();
-                const nextClaimTime = claimedAt + RATE_LIMIT_HOURS * 60 * 60 * 1000;
-                const remainingTime = nextClaimTime - now.getTime();
-                
-                if (remainingTime > 0) {
-                    rateLimitData = {
-                        isRateLimited: true,
-                        nextClaimTime: nextClaimTime,
-                        remainingTime: remainingTime
-                    };
-                } else {
-                    rateLimitData = {
-                        isRateLimited: false,
-                        nextClaimTime: null,
-                        remainingTime: 0
-                    };
-                }
-            } else {
-                rateLimitData = {
-                    isRateLimited: false,
-                    nextClaimTime: null,
-                    remainingTime: 0
-                };
-            }
-
-            setStatus('Requirements checked. Ready to claim.', 'success');
-        } catch (e) {
-            console.error('Failed to check faucet requirements', e);
-            setStatus('Failed to check faucet requirements. Please try again.', 'error');
-        } finally {
-            isRequirementsLoading = false;
-            updateUI();
+    // If connected, proceed with requirements status and claim button
+    if (isRequirementsLoading) {
+      passportStatus.innerHTML = spinner;
+      rateLimitStatus.innerHTML = spinner;
+    } else {
+      // Passport Status
+      if (passportData) {
+        if (passportData.passing_score) {
+          passportStatus.innerHTML = `<span class="text-green-500 font-semibold">${passportData.score.toFixed(2)} (Passed)</span>`;
+        } else {
+          passportStatus.innerHTML = `<span class="text-red-500 font-semibold">${passportData.score.toFixed(2)} (Failed)</span>`;
         }
-    };
+      } else {
+         passportStatus.innerHTML = `<span class="text-red-500 font-semibold">N/A (Failed)</span>`;
+      }
+
+      // Rate Limit Status
+      if (rateLimitData?.isRateLimited) {
+        rateLimitStatus.innerHTML = `<span class="flex items-center gap-1 text-red-500 font-semibold">${clockIcon} ${formatTimeRemaining(rateLimitData.remainingTime)}</span>`;
+      } else {
+        rateLimitStatus.innerHTML = `<span class="text-green-500 font-semibold">Available</span>`;
+      }
+    }
     
-    // Handle faucet claim transaction
-    const handleClaim = async () => {
-      isClaiming = true;
-      setStatus(`Claiming ${selectedNetwork.nativeCurrency} on ${selectedNetwork.name}...`, 'info');
+    const isButtonDisabled = 
+      isClaiming || 
+      isRequirementsLoading ||
+      (passportData && !passportData.passing_score) ||
+      (rateLimitData && rateLimitData.isRateLimited);
+
+    claimButton.style.display = 'block';
+    claimButton.disabled = isButtonDisabled;
+    if (isButtonDisabled) {
+      claimButton.className = 'px-8 py-4 text-xl font-bold rounded-lg mb-3 bg-gray-600 text-gray-400 cursor-not-allowed';
+    } else {
+      claimButton.className = 'px-8 py-4 text-xl font-bold rounded-lg mb-3 bg-white text-black transition-transform transform hover:scale-105';
+    }
+    
+    // Update button text based on state
+    if (isClaiming) {
+      claimButton.innerText = 'Claiming…';
+    } else if (isRequirementsLoading) {
+      claimButton.innerText = 'Checking Requirements…';
+    } else if (passportData && !passportData.passing_score) {
+      claimButton.innerText = `Need score ≥ ${PASSPORT_THRESHOLD}`;
+    } else if (rateLimitData && rateLimitData.isRateLimited) {
+      claimButton.innerText = `Try again in ${formatTimeRemaining(rateLimitData.remainingTime)}`;
+    } else {
+      claimButton.innerText = `CLAIM ETH`;
+    }
+    
+    // Last Claim Display
+    if (lastClaimData) {
+        const claimedAt = new Date(lastClaimData.claimedAt);
+        lastClaimDetails.innerHTML = `
+          <p>Amount: ${lastClaimData.amount} ${getNetworkById(lastClaimData.networkId)?.nativeCurrency}</p>
+          <p>Timestamp: ${claimedAt.toLocaleString()}</p>
+          <p>Tx Hash: <a href="${getNetworkById(lastClaimData.networkId)?.explorerUrl}/tx/${lastClaimData.txHash}" target="_blank" class="underline">${lastClaimData.txHash.slice(0, 10)}...${lastClaimData.txHash.slice(-8)}</a></p>
+        `;
+    } else {
+        lastClaimDetails.textContent = "No previous claims found.";
+    }
+  };
+
+  // --- Main App Logic ---
+  const updateWagmiConfig = (network) => {
+      // Find the chain object in wagmi's supported chains
+      const chain = { 
+        id: network.chainId,
+        name: network.name,
+        nativeCurrency: { name: network.nativeCurrency, symbol: network.nativeCurrency, decimals: 18 },
+        rpcUrls: { default: { http: [network.rpcUrl] } },
+        blockExplorers: { default: { name: 'Explorer', url: network.explorerUrl } },
+        testnet: true
+      };
+
+      // Create the wagmi config with both connectors
+      wagmiConfig = createConfig({
+          chains: [chain],
+          transports: { [network.chainId]: http() },
+          // Add both Farcaster and injected connectors
+          connectors: [farcasterMiniApp(), injected()]
+      });
+      console.log("Wagmi config updated for:", network.name);
+  };
+
+  // Fetches passport and rate limit data
+  const fetchRequirements = async () => {
+      if (!isConnected) return;
+      
+      isRequirementsLoading = true;
+      setStatus('Checking requirements...', 'info');
+      updateUI();
+
+      try {
+          // Fetch passport data from your serverless function
+          passportData = await fetchPassportData(account);
+          
+          // Check rate limit from your Upstash instance
+          const lastClaim = await loadLastClaimData();
+          const now = new Date();
+          
+          if (lastClaim) {
+              const claimedAt = new Date(lastClaim.claimedAt).getTime();
+              const nextClaimTime = claimedAt + RATE_LIMIT_HOURS * 60 * 60 * 1000;
+              const remainingTime = nextClaimTime - now.getTime();
+              
+              if (remainingTime > 0) {
+                  rateLimitData = {
+                      isRateLimited: true,
+                      nextClaimTime: nextClaimTime,
+                      remainingTime: remainingTime
+                  };
+              } else {
+                  rateLimitData = {
+                      isRateLimited: false,
+                      nextClaimTime: null,
+                      remainingTime: 0
+                  };
+              }
+          } else {
+              rateLimitData = {
+                  isRateLimited: false,
+                  nextClaimTime: null,
+                  remainingTime: 0
+              };
+          }
+
+          setStatus('Requirements checked. Ready to claim.', 'success');
+      } catch (e) {
+          console.error('Failed to check faucet requirements', e);
+          setStatus('Failed to check faucet requirements. Please try again.', 'error');
+      } finally {
+          isRequirementsLoading = false;
+          updateUI();
+      }
+  };
+  
+  // Handle faucet claim transaction
+  const handleClaim = async () => {
+    isClaiming = true;
+    setStatus(`Claiming ${selectedNetwork.nativeCurrency} on ${selectedNetwork.name}...`, 'info');
+    updateUI();
+    
+    try {
+      // Call your serverless function to perform the faucet claim
+      const response = await fetch(CLAIM_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              address: account,
+              networkId: selectedNetwork.id,
+              amount: selectedNetwork.faucetAmount,
+          }),
+      });
+
+      if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Server-side claim failed.');
+      }
+
+      const result = await response.json();
+      const hash = result.txHash;
+
+      const claimedAt = new Date().toISOString();
+      const newClaim = {
+          walletAddress: account,
+          networkId: selectedNetwork.id,
+          amount: selectedNetwork.faucetAmount,
+          txHash: hash,
+          claimedAt: claimedAt,
+          passportScore: passportData.score.toFixed(2),
+          isSuccessful: true
+      };
+      
+      // Save the claim to your Upstash instance
+      await saveLastClaimData(newClaim);
+      
+      setStatus(
+        `✅ Claim Successful <a href="${selectedNetwork.explorerUrl}/tx/${hash}" target="_blank" class="underline">View Tx</a>`,
+        'success'
+      );
+      
+      await fetchRequirements();
+      
+    } catch (e) {
+      console.warn('Claim rejected or failed', e);
+      setStatus(`Claim rejected or failed: ${e.message}`, 'error');
+    } finally {
+      isClaiming = false;
+      updateUI();
+    }
+  };
+
+  // Main function to connect the wallet based on environment
+  const connectWallet = async (connector) => {
+    setStatus('Connecting wallet...');
+    updateUI();
+    try {
+      const { accounts } = await connect(wagmiConfig, { connector });
+      account = accounts[0];
+      isConnected = true;
+      await fetchRequirements();
+      setStatus('Wallet connected!', 'success');
+    } catch (e) {
+      console.error('Wallet connect failed', e);
+      setStatus('Failed to connect wallet.', 'error');
+      isConnected = false;
+    }
+    updateUI();
+  };
+
+  // The main function to initialize the app
+  const init = async () => {
+      isFarcasterEnv = typeof sdk.actions.ready === 'function';
+      
+      // Populate the network selector dropdown
+      const activeNetworks = getActiveNetworks();
+      activeNetworks.forEach(network => {
+        const option = document.createElement('option');
+        option.value = network.chainId;
+        option.textContent = network.name;
+        networkSelector.appendChild(option);
+      });
+      
+      // Set the initial network
+      selectedNetwork = activeNetworks[0];
+      networkSelector.value = selectedNetwork.chainId;
+      updateWagmiConfig(selectedNetwork);
+      
+      // Listen for network changes
+      networkSelector.addEventListener('change', async (event) => {
+        const chainId = parseInt(event.target.value);
+        selectedNetwork = getNetworkByChainId(chainId);
+        updateWagmiConfig(selectedNetwork);
+        await fetchRequirements();
+      });
+      
+      // Event listeners for the buttons
+      claimButton.addEventListener('click', () => {
+        if (isConnected) {
+          handleClaim();
+        } else if (isFarcasterEnv) {
+          connectWallet(farcasterMiniApp());
+        }
+      });
+      connectInjectedButton.addEventListener('click', () => {
+        connectWallet(injected());
+      });
+
+      // Set up an interval to update the rate limit countdown
+      setInterval(() => {
+        if (rateLimitData?.isRateLimited) {
+          rateLimitData.remainingTime = rateLimitData.nextClaimTime - Date.now();
+          if (rateLimitData.remainingTime <= 0) {
+            fetchRequirements(); // Re-fetch data to clear rate limit
+          }
+          updateUI();
+        }
+      }, 1000);
+
+      // Initial UI update based on environment
       updateUI();
       
-      try {
-        // Call your serverless function to perform the faucet claim
-        const response = await fetch(CLAIM_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                address: account,
-                networkId: selectedNetwork.id,
-                amount: selectedNetwork.faucetAmount,
-            }),
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Server-side claim failed.');
-        }
-
-        const result = await response.json();
-        const hash = result.txHash;
-
-        const claimedAt = new Date().toISOString();
-        const newClaim = {
-            walletAddress: account,
-            networkId: selectedNetwork.id,
-            amount: selectedNetwork.faucetAmount,
-            txHash: hash,
-            claimedAt: claimedAt,
-            passportScore: passportData.score.toFixed(2),
-            isSuccessful: true
-        };
-        
-        // Save the claim to your Upstash instance
-        await saveLastClaimData(newClaim);
-        
-        setStatus(
-          `✅ Claim Successful <a href="${selectedNetwork.explorerUrl}/tx/${hash}" target="_blank" class="underline">View Tx</a>`,
-          'success'
-        );
-        
-        await fetchRequirements();
-        
-      } catch (e) {
-        console.warn('Claim rejected or failed', e);
-        setStatus(`Claim rejected or failed: ${e.message}`, 'error');
-      } finally {
-        isClaiming = false;
-        updateUI();
+      // In Farcaster, try to connect automatically
+      if (isFarcasterEnv) {
+         connectWallet(farcasterMiniApp());
+         // IMPORTANT: Signal that the Mini App is ready to the Farcaster client
+         sdk.actions.ready();
+         console.log("Farcaster Mini App is ready!"); // For debugging
       }
-    };
+  };
 
-    // Main function to connect the wallet based on environment
-    const connectWallet = async (connector) => {
-      setStatus('Connecting wallet...');
-      updateUI();
-      try {
-        const { accounts } = await connect(wagmiConfig, { connector });
-        account = accounts[0];
-        isConnected = true;
-        await fetchRequirements();
-        setStatus('Wallet connected!', 'success');
-      } catch (e) {
-        console.error('Wallet connect failed', e);
-        setStatus('Failed to connect wallet.', 'error');
-        isConnected = false;
-      }
-      updateUI();
-    };
-
-    // The main function to initialize the app
-    const init = async () => {
-        isFarcasterEnv = typeof sdk.actions.ready === 'function';
-        
-        // Populate the network selector dropdown
-        const activeNetworks = getActiveNetworks();
-        activeNetworks.forEach(network => {
-          const option = document.createElement('option');
-          option.value = network.chainId;
-          option.textContent = network.name;
-          networkSelector.appendChild(option);
-        });
-        
-        // Set the initial network
-        selectedNetwork = activeNetworks[0];
-        networkSelector.value = selectedNetwork.chainId;
-        updateWagmiConfig(selectedNetwork);
-        
-        // Listen for network changes
-        networkSelector.addEventListener('change', async (event) => {
-          const chainId = parseInt(event.target.value);
-          selectedNetwork = getNetworkByChainId(chainId);
-          updateWagmiConfig(selectedNetwork);
-          await fetchRequirements();
-        });
-        
-        // Event listeners for the buttons
-        claimButton.addEventListener('click', () => {
-          if (isConnected) {
-            handleClaim();
-          } else if (isFarcasterEnv) {
-            connectWallet(farcasterMiniApp());
-          }
-        });
-        connectInjectedButton.addEventListener('click', () => {
-          connectWallet(injected());
-        });
-
-        // Set up an interval to update the rate limit countdown
-        setInterval(() => {
-          if (rateLimitData?.isRateLimited) {
-            rateLimitData.remainingTime = rateLimitData.nextClaimTime - Date.now();
-            if (rateLimitData.remainingTime <= 0) {
-              fetchRequirements(); // Re-fetch data to clear rate limit
-            }
-            updateUI();
-          }
-        }, 1000);
-
-        // Initial UI update based on environment
-        updateUI();
-        
-        // In Farcaster, try to connect automatically
-        if (isFarcasterEnv) {
-           connectWallet(farcasterMiniApp());
-        }
-    };
-
-    document.addEventListener('DOMContentLoaded', init);
-  </script>
+  document.addEventListener('DOMContentLoaded', init);
+ </script>
 </body>
 </html>
