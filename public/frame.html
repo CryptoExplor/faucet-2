@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>SuperChain Faucet Frame</title>
+    
+    <!-- Farcaster Frame Standard -->
+    <meta property="og:title" content="SuperChain Faucet (Unofficial)">
+    <meta property="og:image" content="https://faucet-2.vercel.app/frame-image.jpg">
+    <meta property="fc:frame" content="vNext">
+    <meta property="fc:frame:image" content="https://faucet-2.vercel.app/frame-image.jpg">
+    
+    <!-- This is the crucial part: a button that triggers a redirect -->
+    <meta property="fc:frame:button:1" content="🚰 Launch Faucet">
+    <meta property="fc:frame:button:1:action" content="post_redirect">
+    
+    <!-- The API endpoint that will handle the redirect -->
+    <meta property="fc:frame:post_url" content="https://faucet-2.vercel.app/api/launch">
+</head>
+<body>
+    <h1>SuperChain Faucet. If you're seeing this, you're not in a Farcaster client.</h1>
+    <p>Please launch from a Farcaster client like Warpcast.</p>
+</body>
+</html>
