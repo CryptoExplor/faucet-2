@@ -4,7 +4,8 @@
 // It requires `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and `FAUCET_PRIVATE_KEY`
 // to be set as environment variables.
 
-const { ethers } = require('https://cdn.ethers.io/lib/ethers-5.7.2.js');
+// CORRECTED: Use a package dependency for ethers instead of a CDN for backend stability.
+const { ethers } = require('ethers');
 
 module.exports = async (req, res) => {
   // Ensure the request method is POST for claims, or GET for a rate limit check
@@ -29,19 +30,21 @@ module.exports = async (req, res) => {
   }
 
   // --- Upstash Rate-Limiting Logic ---
-  // The key for rate-limiting is a combination of network and address
   const rateLimitKey = `faucet:${networkId}:${address}`;
   const rateLimitUrl = UPSTASH_REDIS_REST_URL;
   const rateLimitHeaders = {
     Authorization: `Bearer ${UPSTASH_REDIS_REST_TOKEN}`,
+    'Content-Type': 'application/json', // Added for POST requests
   };
 
   const getRateLimitData = async () => {
-    // Get the timestamp of the last claim
-    const lastClaimTimestamp = await fetch(`${rateLimitUrl}/get/${rateLimitKey}`, { headers: rateLimitHeaders }).then(r => r.json()).then(data => data.result);
+    // Get the timestamp of the last claim from Upstash
+    const response = await fetch(`${rateLimitUrl}/get/${rateLimitKey}`, { headers: rateLimitHeaders });
+    const { result } = await response.json();
+    const lastClaimTimestamp = result ? parseInt(result) : null;
     
     const now = Date.now();
-    const nextClaimTime = lastClaimTimestamp ? parseInt(lastClaimTimestamp) + (RATE_LIMIT_HOURS * 60 * 60 * 1000) : now;
+    const nextClaimTime = lastClaimTimestamp ? lastClaimTimestamp + (RATE_LIMIT_HOURS * 60 * 60 * 1000) : now;
     const remainingTime = nextClaimTime - now;
 
     if (remainingTime > 0) {
@@ -53,8 +56,13 @@ module.exports = async (req, res) => {
 
   // If this is a GET request, just return the rate limit status
   if (isRateLimitCheck) {
-    const rateLimitStatus = await getRateLimitData();
-    return res.status(200).json(rateLimitStatus);
+    try {
+        const rateLimitStatus = await getRateLimitData();
+        return res.status(200).json(rateLimitStatus);
+    } catch (error) {
+        console.error('Upstash GET error:', error);
+        return res.status(500).json({ error: 'Failed to check rate limit.' });
+    }
   }
 
   // --- Handle POST Request (Claim) ---
@@ -74,6 +82,7 @@ module.exports = async (req, res) => {
       { id: "blast-sepolia", rpcUrl: "https://sepolia.blast.io" },
       { id: "frax-sepolia", rpcUrl: "https://rpc.testnet.frax.com" },
       { id: "cyber-sepolia", rpcUrl: "https://cyber-testnet.alt.technology" },
+      // Add other networks as needed
   ];
   
   const network = SUPPORTED_NETWORKS.find(n => n.id === networkId);
@@ -89,16 +98,24 @@ module.exports = async (req, res) => {
 
     const tx = {
       to: address,
-      value: ethers.utils.parseEther(amount),
+      value: ethers.utils.parseEther(amount || "0"),
     };
 
     const transactionResponse = await wallet.sendTransaction(tx);
     await transactionResponse.wait(); // Wait for the transaction to be mined
 
     // On success, set the rate limit key with the current timestamp
-    await fetch(`${rateLimitUrl}/set/${rateLimitKey}?EX=${RATE_LIMIT_HOURS * 60 * 60}`, {
+    // CORRECTED: Added `method: 'POST'` to ensure the Upstash SET command works.
+    await fetch(`${rateLimitUrl}/set/${rateLimitKey}`, {
+        method: 'POST', // CRITICAL: This was missing
         headers: rateLimitHeaders,
         body: JSON.stringify(Date.now()),
+    });
+
+    // Set expiration separately for clarity and compatibility
+    await fetch(`${rateLimitUrl}/expire/${rateLimitKey}/${RATE_LIMIT_HOURS * 60 * 60}`, {
+        method: 'POST',
+        headers: rateLimitHeaders
     });
 
     res.status(200).json({ message: 'Transaction successful!', txHash: transactionResponse.hash });
