@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=390, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SuperChain Faucet</title>
 
   <!-- Tailwind CSS -->
@@ -12,6 +12,7 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     body {
       font-family: 'Inter', sans-serif;
+      font-size: 16px;
     }
     .select-network {
       background-color: #333;
@@ -31,6 +32,13 @@
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+    .modal-overlay {
+      background-color: rgba(0, 0, 0, 0.75);
+      z-index: 50;
+    }
+    .modal-content {
+      z-index: 60;
     }
   </style>
 
@@ -65,6 +73,18 @@
     <p class="mt-2 text-gray-400">Claim test ETH on a variety of Superchain networks!</p>
   </div>
   
+  <!-- Wallet Connection Status and button -->
+  <div class="bg-[#222] p-6 rounded-xl w-full max-w-sm mb-5 text-center">
+    <h2 class="text-xl font-semibold mb-3">Wallet Status</h2>
+    <div id="walletConnectedDisplay" class="flex items-center justify-center gap-2 mb-4 hidden">
+      <span id="connectedAccount" class="font-mono text-xs md:text-sm"></span>
+      <button id="disconnectButton" class="text-sm px-3 py-1 bg-gray-600 rounded-lg hover:bg-red-500 transition-colors">Disconnect</button>
+    </div>
+    <button id="connectButton" class="px-8 py-4 text-xl font-bold rounded-lg bg-white text-black transition-transform transform hover:scale-105">
+      Connect Wallet
+    </button>
+  </div>
+
   <!-- Network Selection -->
   <div class="bg-[#222] p-6 rounded-xl w-full max-w-sm mb-5 text-center">
     <h2 class="text-xl font-semibold mb-3">Select Network</h2>
@@ -76,16 +96,6 @@
   <!-- Claim Requirements Card -->
   <div class="bg-[#222] p-6 rounded-xl w-full max-w-sm mb-5">
     <h2 class="text-xl font-semibold mb-3">Claim Requirements</h2>
-    
-    <!-- Wallet Connected Status -->
-    <div class="flex items-center justify-between py-2 border-b border-gray-700">
-      <span class="flex items-center gap-2">
-        Wallet Connected
-      </span>
-      <div id="walletStatus">
-        <!-- Status and icon will be rendered here by JavaScript -->
-      </div>
-    </div>
     
     <!-- Gitcoin Passport Status -->
     <div class="flex items-center justify-between py-2 border-b border-gray-700">
@@ -123,14 +133,42 @@
 
   <!-- Status Message Box -->
   <div id="statusBox" class="px-3 py-2 rounded-lg text-sm w-full max-w-sm text-center"></div>
+
+  <!-- Wallet Connection Modal -->
+  <div id="walletModal" class="fixed inset-0 hidden items-center justify-center p-4 modal-overlay">
+    <div class="bg-[#222] p-8 rounded-xl w-full max-w-sm modal-content">
+      <h2 class="text-xl font-bold text-center mb-6">Connect a Wallet</h2>
+      <div class="flex flex-col gap-4">
+        <!-- New button for Injected/Browser Wallets -->
+        <button id="injectedConnectBtn" class="flex items-center justify-center gap-3 px-6 py-3 bg-gray-500 hover:bg-gray-600 transition-colors text-white rounded-lg font-semibold">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M11 1.94c-5.06 0-9.17 4.11-9.17 9.17s4.11 9.17 9.17 9.17 9.17-4.11 9.17-9.17S16.06 1.94 11 1.94zm0 16.51c-4.04 0-7.34-3.3-7.34-7.34s3.3-7.34 7.34-7.34 7.34 3.3 7.34 7.34-3.3 7.34-7.34 7.34z"/><path d="M11 14.89c-.66 0-1.2-.54-1.2-1.2V9.89c0-.66.54-1.2 1.2-1.2s1.2.54 1.2 1.2v3.8c0 .66-.54 1.2-1.2 1.2zM11 7.42c-.28 0-.5.22-.5.5v2.85c0 .28.22.5.5.5s.5-.22.5-.5V7.92c0-.28-.22-.5-.5-.5z"/><path d="M12.7 16.82h-3.4c-.15 0-.2-.1-.1-.2l1.7-2.94c.1-.15.25-.15.35 0l1.7 2.94c.1.1.05.2-.1.2z"/></svg>
+          Connect Browser Wallet
+        </button>
+        <button id="farcasterConnectBtn" class="flex items-center justify-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-700 transition-colors text-white rounded-lg font-semibold">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm3.2 13.92c-.1.14-.24.26-.44.34a.7.7 0 0 1-.3.08c-.14 0-.28-.02-.4-.08a.95.95 0 0 1-.36-.26c-.1-.1-.14-.2-.16-.3a.35.35 0 0 0-.2-.2c-.1 0-.16.02-.24.08-.08.06-.12.1-.14.16a.42.42 0 0 1-.16.14c-.06.04-.12.06-.2.06a.35.35 0 0 1-.2-.08c-.1-.08-.16-.18-.16-.3s-.04-.32-.12-.48c-.06-.12-.12-.24-.16-.38a.86.86 0 0 0-.16-.3c-.04-.08-.12-.12-.22-.12h-1.42a.58.58 0 0 0-.48.24l-3.2 3.82a.25.25 0 0 1-.2.08h-.02a.25.25 0 0 1-.2-.08.43.43 0 0 1-.08-.24c0-.1.04-.2.12-.3.4-.48.72-.88 1.04-1.28a3.1 3.1 0 0 0 .66-.9c.12-.22.2-.4.26-.54a.63.63 0 0 0 .1-.26c.02-.08 0-.14-.06-.16a.38.38 0 0 1-.1-.06c-.06-.02-.1-.02-.16 0s-.12.04-.2.1a1.26 1.26 0 0 1-.24.2c-.1.12-.2.18-.3.18-.12 0-.2-.04-.26-.14-.06-.1-.06-.2-.02-.34a.6.6 0 0 1 .14-.24c.06-.1.16-.18.28-.24.12-.08.24-.12.38-.12.16 0 .3.04.42.12.14.08.24.2.32.34.08.12.14.28.18.46.04.16.06.3.06.4s-.02.26-.06.4-.08.26-.14.4c-.1.2-.18.38-.28.56l-.16.3a.26.26 0 0 0-.02.16c0 .1.04.16.12.2a.37.37 0 0 0 .22.04.3.3 0 0 0 .22-.08c.08-.08.14-.18.18-.3s.06-.24.08-.38c.16-.6.38-1.12.66-1.54.26-.42.54-.78.84-1.08.28-.3.56-.54.82-.72.28-.18.5-.26.68-.26h1.24a.5.5 0 0 1 .32.1.2.2 0 0 1 .14.28c-.02.04-.08.1-.18.16-.12.06-.24.1-.36.14a1.86 1.86 0 0 0-.28.08.38.38 0 0 0-.12.04c-.06.04-.1.08-.1.14a.2.2 0 0 0 .04.14c.06.04.12.08.2.14.08.06.14.12.2.18.06.06.1.1.12.14.04.06.06.12.06.2c0 .12-.04.22-.1.3-.06.08-.16.14-.28.2a1.86 1.86 0 0 0-.32.18c-.1.06-.16.1-.2.12-.06.04-.1.08-.1.12-.02.04 0 .08.04.12.04.04.08.08.14.12.06.04.12.08.2.14.14.12.26.24.36.38.12.14.22.28.3.4s.14.24.18.38c.04.14.06.26.06.36v.44a.42.42 0 0 0 .14.32c.08.08.18.12.3.12.1 0 .2-.04.3-.12.14-.1.26-.2.38-.34a.78.78 0 0 0 .34-.44c.06-.16.08-.28.08-.34v-3.76a.42.42 0 0 0-.14-.32c-.08-.08-.18-.12-.3-.12-.12 0-.22.04-.3.12-.1.1-.16.22-.16.36v.38c0 .12 0 .22.02.3a.6.6 0 0 1 .06.26c.04.1.08.18.14.24.08.1.18.14.3.14.1 0 .2-.04.3-.12.1-.08.16-.2.16-.36V9.44c0-.12.04-.22.12-.3.08-.1.18-.16.3-.18h.08a.5.5 0 0 1 .32.16c.1.1.16.22.16.36V14.1c0 .12-.02.24-.06.38z"></path></svg>
+          Connect with Farcaster
+        </button>
+        <button id="walletConnectBtn" class="flex items-center justify-center gap-3 px-6 py-3 bg-sky-500 hover:bg-sky-600 transition-colors text-white rounded-lg font-semibold">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M11 1.94c-5.06 0-9.17 4.11-9.17 9.17s4.11 9.17 9.17 9.17 9.17-4.11 9.17-9.17S16.06 1.94 11 1.94zm0 16.51c-4.04 0-7.34-3.3-7.34-7.34s3.3-7.34 7.34-7.34 7.34 3.3 7.34 7.34-3.3 7.34-7.34 7.34z"/><path d="M11 14.89c-.66 0-1.2-.54-1.2-1.2V9.89c0-.66.54-1.2 1.2-1.2s1.2.54 1.2 1.2v3.8c0 .66-.54 1.2-1.2 1.2zM11 7.42c-.28 0-.5.22-.5.5v2.85c0 .28.22.5.5.5s.5-.22.5-.5V7.92c0-.28-.22-.5-.5-.5z"/><path d="M12.7 16.82h-3.4c-.15 0-.2-.1-.1-.2l1.7-2.94c.1-.15.25-.15.35 0l1.7 2.94c.1.1.05.2-.1.2z"/></svg>
+          Connect with WalletConnect
+        </button>
+      </div>
+      <button id="closeModalBtn" class="mt-6 px-4 py-2 text-sm text-center w-full bg-gray-700 hover:bg-gray-600 transition-colors rounded-lg">Close</button>
+    </div>
+  </div>
   
   <script type="module">
     import {
       createConfig,
       connect,
-      http
+      disconnect,
+      http,
+      getAccount,
+      watchAccount
     } from 'https://esm.sh/@wagmi/core@2.11.7';
+    import { injected } from 'https://esm.sh/@wagmi/connectors@7.0.0/injected';
     import { farcasterMiniApp } from 'https://esm.sh/@farcaster/miniapp-wagmi-connector';
+    import { WalletConnectConnector } from 'https://esm.sh/@wagmi/connectors@7.0.0/walletConnect';
     import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
     
     // Import Lucide icons as SVG strings for direct insertion
@@ -153,11 +191,12 @@
     let isFarcasterEnv = false;
 
     // --- Configuration for Deployment ---
-    // !!! IMPORTANT: Replace these with your actual values before deploying !!!
+    // IMPORTANT: Replace these with your actual values from the .env file before deploying!
     const PASSPORT_THRESHOLD = 10;
     const RATE_LIMIT_HOURS = 24;
-    const UPSTASH_REST_URL = 'https://[YOUR_REDIS_URL].upstash.io';
-    const UPSTASH_REST_TOKEN = '[YOUR_REDIS_TOKEN]';
+    const WALLETCONNECT_PROJECT_ID = 'YOUR_WALLETCONNECT_PROJECT_ID'; // Replace with your Project ID
+    const UPSTASH_REST_URL = 'https://[YOUR_REDIS_URL].upstash.io'; // Replace with the value of UPSTASH_REDIS_REST_URL
+    const UPSTASH_REST_TOKEN = '[YOUR_REDIS_TOKEN]'; // Replace with the value of UPSTASH_REDIS_REST_TOKEN
     // These would be your serverless function endpoints
     const PASSPORT_API_URL = '/api/passport-score'; 
     const CLAIM_API_URL = '/api/claim-eth';
@@ -185,12 +224,20 @@
 
     // --- DOM Elements ---
     const networkSelector = document.getElementById('networkSelector');
-    const walletStatus = document.getElementById('walletStatus');
     const passportStatus = document.getElementById('passportStatus');
     const rateLimitStatus = document.getElementById('rateLimitStatus');
     const claimButton = document.getElementById('claimButton');
     const statusBox = document.getElementById('statusBox');
     const lastClaimDetails = document.getElementById('lastClaimDetails');
+    const connectButton = document.getElementById('connectButton');
+    const disconnectButton = document.getElementById('disconnectButton');
+    const walletModal = document.getElementById('walletModal');
+    const injectedConnectBtn = document.getElementById('injectedConnectBtn');
+    const farcasterConnectBtn = document.getElementById('farcasterConnectBtn');
+    const walletConnectBtn = document.getElementById('walletConnectBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const walletConnectedDisplay = document.getElementById('walletConnectedDisplay');
+    const connectedAccountSpan = document.getElementById('connectedAccount');
 
     // --- Utility Functions ---
 
@@ -241,61 +288,80 @@
       });
     };
     
-    // Function to load last claim data from Upstash
+    // Function to load last claim data from Upstash using REST API
     const loadLastClaimData = async () => {
-        // This function would fetch the claim data from your Upstash instance.
-        // The key would be something like 'faucet:claim:{account}:{networkId}'
-        // Example: `const response = await fetch(UPSTASH_REST_URL, {
-        //   method: 'POST',
-        //   headers: { 'Authorization': `Bearer ${UPSTASH_REST_TOKEN}` },
-        //   body: JSON.stringify(['GET', `faucet:claim:${account}:${selectedNetwork.id}`])
-        // });`
-        return new Promise((resolve) => {
-            const storedClaims = JSON.parse(localStorage.getItem('faucetClaims') || '{}');
-            resolve(storedClaims[account]?.[selectedNetwork.id] || null);
+      const key = `faucet:claim:${account}:${selectedNetwork.id}`;
+      const url = `${UPSTASH_REST_URL}/GET/${key}`;
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${UPSTASH_REST_TOKEN}`
+          }
         });
+        const result = await response.json();
+        if (result.result) {
+          return JSON.parse(result.result);
+        }
+        return null;
+      } catch (e) {
+        console.error('Failed to load claim data from Upstash:', e);
+        return null;
+      }
     };
     
-    // Function to save last claim data to Upstash
+    // Function to save last claim data to Upstash using REST API
     const saveLastClaimData = async (claim) => {
-        // This function would save the claim data to your Upstash instance.
-        // It should use the `SET` command with an expiration time.
-        // Example: `const expires = RATE_LIMIT_HOURS * 60 * 60;`
-        // `const response = await fetch(UPSTASH_REST_URL, {
-        //   method: 'POST',
-        //   headers: { 'Authorization': `Bearer ${UPSTASH_REST_TOKEN}` },
-        //   body: JSON.stringify(['SET', `faucet:claim:${account}:${selectedNetwork.id}`, JSON.stringify(claim), 'EX', expires])
-        // });`
-        return new Promise((resolve) => {
-            const storedClaims = JSON.parse(localStorage.getItem('faucetClaims') || '{}');
-            if (!storedClaims[account]) {
-                storedClaims[account] = {};
-            }
-            storedClaims[account][selectedNetwork.id] = claim;
-            localStorage.setItem('faucetClaims', JSON.stringify(storedClaims));
-            resolve();
+      const key = `faucet:claim:${account}:${selectedNetwork.id}`;
+      // Expiration time in seconds
+      const expirationSeconds = RATE_LIMIT_HOURS * 60 * 60; 
+      const value = JSON.stringify(claim);
+      const url = `${UPSTASH_REST_URL}/SET/${key}/${value}?EX=${expirationSeconds}`;
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${UPSTASH_REST_TOKEN}`
+          }
         });
+        return await response.json();
+      } catch (e) {
+        console.error('Failed to save claim data to Upstash:', e);
+      }
     };
-
 
     // --- UI Update Function ---
     const updateUI = () => {
-      if (!isFarcasterEnv) {
-        walletStatus.innerHTML = `Not in Farcaster ${warningIcon}`;
-        passportStatus.innerHTML = `Not in Farcaster ${warningIcon}`;
-        rateLimitStatus.innerHTML = `Not in Farcaster ${warningIcon}`;
-        claimButton.innerText = 'Launch in Farcaster';
-        claimButton.disabled = true;
-        claimButton.className = 'px-8 py-4 text-xl font-bold rounded-lg mb-3 bg-gray-600 text-gray-400 cursor-not-allowed';
-        return;
+      
+      // Update wallet connection display
+      if (isConnected) {
+        connectButton.classList.add('hidden');
+        walletConnectedDisplay.classList.remove('hidden');
+        connectedAccountSpan.textContent = `Connected: ${account.slice(0, 6)}...${account.slice(-4)}`;
+      } else {
+        connectButton.classList.remove('hidden');
+        walletConnectedDisplay.classList.add('hidden');
+        passportStatus.innerHTML = `<span class="text-red-500 font-semibold">N/A (Failed)</span>`;
+        rateLimitStatus.innerHTML = `<span class="text-red-500 font-semibold">N/A (Failed)</span>`;
       }
 
-      walletStatus.innerHTML = isConnected ? `<span class="font-mono text-xs">${account.slice(0, 6)}...${account.slice(-4)}</span> ${checkIcon}` : crossIcon;
+      // Disable farcaster button if not in a Farcaster environment
+      if (!isFarcasterEnv) {
+        farcasterConnectBtn.disabled = true;
+        farcasterConnectBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        farcasterConnectBtn.title = 'This button only works inside a Farcaster Mini App.';
+      } else {
+        farcasterConnectBtn.disabled = false;
+        farcasterConnectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        farcasterConnectBtn.title = '';
+      }
+      
 
       if (isRequirementsLoading) {
         passportStatus.innerHTML = spinner;
         rateLimitStatus.innerHTML = spinner;
-      } else {
+      } else if (isConnected) {
         // Passport Status
         if (passportData) {
           if (passportData.passing_score) {
@@ -304,7 +370,7 @@
             passportStatus.innerHTML = `<span class="text-red-500 font-semibold">${passportData.score.toFixed(2)} (Failed)</span>`;
           }
         } else {
-           passportStatus.innerHTML = `<span class="text-red-500 font-semibold">N/A (Failed)</span>`;
+          passportStatus.innerHTML = `<span class="text-red-500 font-semibold">N/A (Failed)</span>`;
         }
 
         // Rate Limit Status
@@ -333,7 +399,7 @@
       if (isClaiming) {
         claimButton.innerText = 'Claiming…';
       } else if (!isConnected) {
-        claimButton.innerText = 'CONNECT WALLET';
+        claimButton.innerText = 'CONNECT WALLET TO CONTINUE';
       } else if (isRequirementsLoading) {
         claimButton.innerText = 'Checking Requirements…';
       } else if (passportData && !passportData.passing_score) {
@@ -368,17 +434,30 @@
           blockExplorers: { default: { name: 'Explorer', url: network.explorerUrl } },
           testnet: true
         };
-
+      
+        // Create wagmi config with all three connectors
         wagmiConfig = createConfig({
             chains: [chain],
-            transports: { [network.chainId]: http() }
+            transports: { [network.chainId]: http() },
+            connectors: [
+              injected(), // New: Injected wallet connector
+              farcasterMiniApp(),
+              new WalletConnectConnector({ projectId: WALLETCONNECT_PROJECT_ID, showQrModal: true })
+            ]
         });
         console.log("Wagmi config updated for:", network.name);
     };
 
     // Fetches passport and rate limit data
     const fetchRequirements = async () => {
-        if (!isConnected) return;
+        if (!isConnected) {
+          // Clear previous data when not connected
+          passportData = null;
+          rateLimitData = null;
+          lastClaimData = null;
+          updateUI();
+          return;
+        }
         
         isRequirementsLoading = true;
         setStatus('Checking requirements...', 'info');
@@ -391,6 +470,7 @@
             // Check rate limit from your Upstash instance
             const lastClaim = await loadLastClaimData();
             const now = new Date();
+            lastClaimData = lastClaim;
             
             if (lastClaim) {
                 const claimedAt = new Date(lastClaim.claimedAt).getTime();
@@ -483,17 +563,76 @@
         updateUI();
       }
     };
-
+    
+    // Connect using injected/browser wallet
+    const connectInjectedWallet = async () => {
+      setStatus('Connecting to browser wallet...');
+      try {
+        await connect(wagmiConfig, { connector: wagmiConfig.connectors[0] }); // The first connector is now 'injected'
+        setStatus('Wallet connected!', 'success');
+        closeModal();
+      } catch (e) {
+        console.error('Browser wallet connect failed', e);
+        setStatus('Failed to connect with browser wallet. Is a wallet extension installed?', 'error');
+      }
+    };
+    
+    // Connect using Farcaster mini-app connector
+    const connectFarcasterWallet = async () => {
+      setStatus('Connecting with Farcaster...');
+      try {
+        await connect(wagmiConfig, { connector: wagmiConfig.connectors[1] }); // Now the second connector
+        setStatus('Wallet connected with Farcaster!', 'success');
+        closeModal();
+      } catch (e) {
+        console.error('Farcaster connect failed', e);
+        setStatus('Failed to connect with Farcaster. Please try again.', 'error');
+      }
+    };
+    
+    // Connect using WalletConnect
+    const connectWithWalletConnect = async () => {
+      if (WALLETCONNECT_PROJECT_ID === 'YOUR_WALLETCONNECT_PROJECT_ID') {
+        setStatus('Please replace the WalletConnect Project ID with a valid one.', 'error');
+        return;
+      }
+      setStatus('Connecting with WalletConnect...', 'info');
+      try {
+        await connect(wagmiConfig, { connector: wagmiConfig.connectors[2] }); // Now the third connector
+        setStatus('Wallet connected with WalletConnect!', 'success');
+        closeModal();
+      } catch (e) {
+        console.error('WalletConnect failed', e);
+        setStatus('Failed to connect with WalletConnect. Please try again.', 'error');
+      }
+    };
+    
+    // Disconnect the current wallet
+    const disconnectWallet = async () => {
+      try {
+        await disconnect(wagmiConfig);
+        setStatus('Wallet disconnected.', 'info');
+      } catch (e) {
+        console.error('Failed to disconnect', e);
+        setStatus('Failed to disconnect wallet. Please try again.', 'error');
+      }
+    };
+    
+    // Modal control functions
+    const openModal = () => {
+      walletModal.classList.remove('hidden');
+      walletModal.classList.add('flex');
+    };
+    
+    const closeModal = () => {
+      walletModal.classList.remove('flex');
+      walletModal.classList.add('hidden');
+    };
+    
     // The main function to initialize the app
     const init = async () => {
         isFarcasterEnv = typeof sdk.actions.ready === 'function';
-        
-        if (!isFarcasterEnv) {
-            setStatus('This app must be opened inside a Farcaster Mini App client to function.', 'error');
-            updateUI();
-            return;
-        }
-
+      
         // Populate the network selector dropdown
         const activeNetworks = getActiveNetworks();
         activeNetworks.forEach(network => {
@@ -507,9 +646,27 @@
         selectedNetwork = activeNetworks[0];
         networkSelector.value = selectedNetwork.chainId;
         updateWagmiConfig(selectedNetwork);
-        
-        // Initial connect and data fetch
-        await connectWallet();
+      
+        // Watch for account changes and update UI
+        watchAccount(wagmiConfig, {
+          onChange(newAccount) {
+            isConnected = newAccount.isConnected;
+            account = newAccount.address;
+            if (isConnected) {
+              fetchRequirements();
+            } else {
+              fetchRequirements(); // Call to clear the UI
+            }
+          }
+        });
+      
+        // Check for an existing connection on page load
+        const existingAccount = getAccount(wagmiConfig);
+        isConnected = existingAccount.isConnected;
+        account = existingAccount.address;
+        if (isConnected) {
+          await fetchRequirements();
+        }
         
         // Listen for network changes
         networkSelector.addEventListener('change', async (event) => {
@@ -522,6 +679,14 @@
         // Event listener for the claim button
         claimButton.addEventListener('click', handleClaim);
         
+        // Event listeners for the new wallet connection UI
+        connectButton.addEventListener('click', openModal);
+        disconnectButton.addEventListener('click', disconnectWallet);
+        injectedConnectBtn.addEventListener('click', connectInjectedWallet);
+        farcasterConnectBtn.addEventListener('click', connectFarcasterWallet);
+        walletConnectBtn.addEventListener('click', connectWithWalletConnect);
+        closeModalBtn.addEventListener('click', closeModal);
+        
         // Set up an interval to update the rate limit countdown
         setInterval(() => {
           if (rateLimitData?.isRateLimited) {
@@ -532,22 +697,8 @@
             updateUI();
           }
         }, 1000);
-    };
-
-    const connectWallet = async () => {
-        setStatus('Connecting wallet...');
-        updateUI();
-        try {
-          const { accounts } = await connect(wagmiConfig, { connector: farcasterMiniApp() });
-          account = accounts[0];
-          isConnected = true;
-          await fetchRequirements();
-          setStatus('Wallet connected!', 'success');
-        } catch (e) {
-          console.error('Farcaster connect failed', e);
-          setStatus('Failed to connect wallet.', 'error');
-          isConnected = false;
-        }
+        
+        // Initial UI update
         updateUI();
     };
 
